@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  crawler:
+    build: .
+    image: continuous_crawler:latest
+    container_name: crawler_app
+    environment:
+      - CRAWL_INTERVAL=5m
+      - TARGET_URLS=https://example.com,https://another-example.com
+    volumes:
+      - /var/log/app_docker:/var/log/app
+    # volumes:
+    #   - ./config:/app/config
+    # depends_on:
+    #   - db
+  db:
+    image: postgres:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=example
