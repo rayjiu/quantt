@@ -29,6 +29,7 @@ func InitLogger() {
 	// 同时输出到文件和标准输出（可选）
 
 	log.SetOutput(io.MultiWriter(os.Stdout, writer))
+	log.SetReportCaller(true)
 
 	// 设置日志格式
 	log.SetFormatter(&log.TextFormatter{

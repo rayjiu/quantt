@@ -14,7 +14,7 @@ func main() {
 	crawler := crawler.NewCrawler(cfg)
 
 	crawler.Start()
-	log.Info("crawler main start complete")
+	log.Info("crawler main start complete!")
 	for {
 	}
 }

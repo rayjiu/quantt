@@ -1,32 +1,45 @@
-# 第一阶段：构建应用程序
-FROM golang:1.23.2-bullseye AS builder
-
-# 设置工作目录
-WORKDIR /app
-
-# 复制go.mod和go.sum并下载依赖
-COPY go.mod go.sum ./
+# Stage 1: Modules caching
+FROM golang:1.23.2-bullseye as modules
+COPY go.mod go.sum /modules/
+WORKDIR /modules
 RUN go mod download
 
-# 复制项目源代码
-COPY . .
+# Stage 2: Build
+FROM golang:1.23.2-bullseye as builder
+COPY --from=modules /go/pkg /go/pkg
+COPY . /workdir
+WORKDIR /workdir
+# Install playwright CLI with correct version for later use
+RUN PWGO_VER=$(grep -oE "playwright-go v\S+" /workdir/go.mod | sed 's/playwright-go //g') \
+    && go install github.com/playwright-community/playwright-go/cmd/playwright@${PWGO_VER}
+# Build your app (only in production)
+ARG ENV=production
+RUN if [ "$ENV" = "production" ]; then GOOS=linux GOARCH=amd64 go build -o build/crawler ./cmd/crawler; fi
 
-# 构建可执行文件
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o crawler ./cmd/crawler
+# Stage 3: Final
+FROM ubuntu:jammy
+# Tsinghua Ubuntu source
+RUN sed -i 's|http://archive.ubuntu.com/ubuntu/|https://mirrors.tuna.tsinghua.edu.cn/ubuntu/|g' /etc/apt/sources.list
 
-# 第二阶段：创建一个最小化的运行镜像
-FROM alpine:latest
+# Copy binaries or source code based on the environment
+COPY --from=builder /workdir /workdir
+COPY --from=builder /go/bin/playwright /playwright
+# Alway copy to go the final stage.
+COPY --from=builder /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
 
-RUN mkdir -p /var/log/app
+# COPY --from=builder /go/bin/playwright /crawler /
+ARG ENV=production
+# The `rm -rf /user/local/go/; ` may execute wrong. not tested.
+RUN if [ "$ENV" = "production" ]; then \
+    cp /workdir/build/crawler /crawler; \
+    rm -rf /usr/local/go/; \
+fi
 
-# 设置时区（可选）
-ENV TZ=Asia/Shanghai
+# Install dependencies and all Playwright browsers
+RUN apt-get update && apt-get install -y ca-certificates tzdata \
+    && /playwright install --with-deps \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /workdir
 
-# 将可执行文件从构建阶段复制到运行阶段
-COPY --from=builder /app/crawler /crawler
-
-# 暴露端口（如果需要）
-# EXPOSE 8080
-
-# 设置容器启动时执行的命令
-ENTRYPOINT ["/crawler"]
+CMD if [ "$ENV" = "production" ]; then /crawler; else go run ./cmd/crawler; fi
