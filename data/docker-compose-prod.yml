@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  crawler:
+    build:
+      context: .
+      args:
+        - ENV=production  # 指定开发环境构建
+    image: continuous_crawler:latest
+    container_name: crawler_app
+    environment:
+      - ENV=production
+      - CRAWL_INTERVAL=5m
+      - TARGET_URLS=https://example.com,https://another-example.com
+    volumes:
+      # - .:/workdir  # 将本地代码挂载到容器中，如果是production，则这个不需要
+      - /var/log/app_docker:/var/log/app
