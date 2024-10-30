@@ -2,6 +2,7 @@
 package logging
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -35,7 +36,15 @@ func InitLogger() {
 	log.SetFormatter(&log.TextFormatter{
 		TimestampFormat: time.RFC3339,
 	})
+	log.SetFormatter(new(CustomFormatter))
 
 	// 设置日志级别
 	log.SetLevel(log.InfoLevel)
+}
+
+type CustomFormatter struct{}
+
+func (f *CustomFormatter) Format(entry *log.Entry) ([]byte, error) {
+	logMessage := fmt.Sprintf("[%s] %s: %s\n", entry.Level, entry.Time.Format("2006-01-02 15:04:05"), entry.Message)
+	return []byte(logMessage), nil
 }

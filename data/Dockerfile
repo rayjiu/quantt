@@ -30,16 +30,17 @@ ENV PATH="/usr/local/go/bin:${PATH}"
 
 # COPY --from=builder /go/bin/playwright /crawler /
 ARG ENV=production
-# The `rm -rf /user/local/go/; ` may execute wrong. not tested.
-RUN if [ "$ENV" = "production" ]; then \
-    cp /workdir/build/crawler /crawler; \
-    rm -rf /usr/local/go/; \
-fi
 
 # Install dependencies and all Playwright browsers
 RUN apt-get update && apt-get install -y ca-certificates tzdata \
     && /playwright install --with-deps \
+    && /playwright install chromium \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /workdir
+
+RUN if [ "$ENV" = "production" ]; then \
+    cp /workdir/build/crawler /crawler; \
+    rm -rf /usr/local/go/; \
+fi
 
 CMD if [ "$ENV" = "production" ]; then /crawler; else go run ./cmd/crawler; fi

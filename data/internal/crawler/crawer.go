@@ -1,8 +1,6 @@
 package crawler
 
 import (
-	"fmt"
-
 	"github.com/playwright-community/playwright-go"
 	"github.com/rayjiu/quantt/data/internal/config"
 	log "github.com/sirupsen/logrus"
@@ -19,7 +17,7 @@ func NewCrawler(cfg *config.Config) *Crawler {
 }
 
 func (*Crawler) Start() {
-	fmt.Print("Start to start crawer.")
+	log.Infof("Start to start crawer.")
 	pw, err := playwright.Run()
 	if err != nil {
 		log.Errorf("could not start Playwright: %v", err)
@@ -50,11 +48,4 @@ func (*Crawler) Start() {
 			log.Errorf("err:%+v", err)
 		}
 	}
-
-	// 获取页面标题
-	title, err := page.Title()
-	if err != nil {
-		log.Errorf("could not get title: %v", err)
-	}
-	log.Infof("Page title: %s", title)
 }
