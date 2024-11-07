@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sync"
+	"time"
 
 	"github.com/playwright-community/playwright-go"
 	"github.com/rayjiu/quantt/data/internal/constants"
@@ -20,44 +22,81 @@ var (
 
 type crawler struct {
 	// cfg *config.Config
+	urlChain          chan urlInfo
+	stopDataWriteChan chan int
+	sectorDataChan    chan model.Sector
 }
 
-var eastmoney *crawler = &crawler{}
+type urlInfo struct {
+	url     string
+	secType int
+	action  int // 0 表示忽略，1表示停止
+}
+
+var eastmoney *crawler = &crawler{
+	urlChain:          make(chan urlInfo),
+	stopDataWriteChan: make(chan int),
+	sectorDataChan:    make(chan model.Sector),
+}
 
 // startCrawSectorInfo 开始爬取板块列表和基本信息
 func (c *crawler) startCrawSectorInfo() {
 	c.startReceiveSectorData()
 	log.Infof("Start to start crawer.")
-	pw, err := playwright.Run()
-	if err != nil {
-		log.Errorf("could not start Playwright: %v", err)
-	}
-	defer pw.Stop()
 
-	// 启动 Chromium 浏览器
-	browser, err := pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
-		Headless: playwright.Bool(true),
-	})
-
-	if err != nil {
-		log.Errorf("could not launch browser: %v", err)
-	}
-	defer browser.Close()
-
-	eastmoney.sendPgeRequest(browser, concept_url, constants.SectorConcept)
-	eastmoney.sendPgeRequest(browser, area_url, constants.SectorArea)
-	eastmoney.sendPgeRequest(browser, industry_url, constants.SectorIndustry)
+	c.startBrowser()
+	c.urlChain <- urlInfo{url: industry_url, secType: constants.SectorIndustry}
+	c.urlChain <- urlInfo{url: concept_url, secType: constants.SectorConcept}
+	c.urlChain <- urlInfo{url: area_url, secType: constants.SectorArea}
+	c.urlChain <- urlInfo{action: 1}
 }
 
-func (*crawler) sendPgeRequest(browser playwright.Browser, url string, sectionType int) {
+func (c *crawler) startBrowser() {
 
-	var page, err = browser.NewPage()
+	go func() {
+		pw, err := playwright.Run()
+		if err != nil {
+			log.Errorf("could not start Playwright: %v", err)
+		}
+		defer pw.Stop()
+		// 启动 Chromium 浏览器
+		browser, err := pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
+			Headless: playwright.Bool(true),
+		})
+		if err != nil {
+			log.Errorf("could not launch browser: %v", err)
+		}
+		defer browser.Close()
+		var wg sync.WaitGroup
+		var receivedUrl bool
+		for {
+			urlInfo := <-c.urlChain
+
+			if urlInfo.action == 1 {
+				if receivedUrl {
+					wg.Wait()
+				}
+
+				log.Info("Received stop action. Exiting goroutine.")
+				c.stopDataWriteChan <- 1
+				break // Exit the loop and end the goroutine
+			} else {
+				receivedUrl = true
+				go c.sendPgeRequest(&wg, browser, urlInfo.url, urlInfo.secType)
+			}
+		}
+	}()
+}
+
+func (c *crawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Browser, url string, sectionType int) {
+	wg.Add(1)
+	defer wg.Done()
+	page, err := browser.NewPage()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("err:%v", err)
 	}
 
 	for i := 1; i < 100; i++ {
-		log.Infof("Start to crawl page:%v", (i))
 		var finalUrl = fmt.Sprintf(url, i)
 		if response, err := page.Request().Get(finalUrl); err != nil {
 			log.Errorf("err:%+v", err)
@@ -81,16 +120,17 @@ func (*crawler) sendPgeRequest(browser playwright.Browser, url string, sectionTy
 					}
 
 					if resp.Data == nil {
-						log.Infof("finished crawl for %v pages.", (i))
+						log.Infof("[%v]finished crawl for %v pages.", sectionType, (i))
 						// stopChan <- 0
 						break
 					} else {
 						var dataDiffs = resp.Data.Diff
 						for _, diff := range dataDiffs {
-							sectorDataChan <- model.Sector{
-								SecCode: diff.F12,
-								SecName: diff.F14,
-								SecType: int16(sectionType),
+							c.sectorDataChan <- model.Sector{
+								SecCode:    diff.F12,
+								SecName:    diff.F14,
+								SecType:    int16(sectionType),
+								UpdateTime: time.Now(),
 							}
 						}
 					}
@@ -106,24 +146,21 @@ func (*crawler) sendPgeRequest(browser playwright.Browser, url string, sectionTy
 	}
 }
 
-var stopChan chan int = make(chan int)
-var sectorDataChan chan model.Sector = make(chan model.Sector)
-
-func (*crawler) startReceiveSectorData() {
+func (c *crawler) startReceiveSectorData() {
 	var targetSectors []model.Sector
 	go func() {
 		for {
 			select {
-			case <-stopChan:
+			case <-c.stopDataWriteChan:
 				log.Infof("接受数据等待写入的channel关闭, targetSecotrs.Len:%v", len(targetSectors))
 				if len(targetSectors) > 0 {
 					service.SecotorService.BatchUpsert(targetSectors)
 				}
 				return
 
-			case data := <-sectorDataChan:
+			case data := <-c.sectorDataChan:
 				targetSectors = append(targetSectors, data)
-				if len(targetSectors) >= 20 {
+				if len(targetSectors) >= 100 {
 					service.SecotorService.BatchUpsert(targetSectors)
 					targetSectors = nil
 				}
