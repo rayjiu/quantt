@@ -25,6 +25,11 @@ func NewSectorService(sectorRepo *repository.SectorRepository) *sectorService {
 	}
 }
 
+// GetCachedSector 获取系统中最新的板块信息
+func (s *sectorService) GetCachedSector() map[string]*model.Sector {
+	return s.cache
+}
+
 // 缓存刷新方法，假设可以周期性地刷新缓存
 func (s *sectorService) RefreshCache() error {
 	sectors, err := s.sectorRepo.GetAll()

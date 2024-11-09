@@ -1,5 +1,14 @@
 package crawler
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/rayjiu/quantt/data/internal/db/model"
+)
+
 type Diff struct {
 	F1   int     `json:"f1"`
 	F2   float64 `json:"f2"`
@@ -50,4 +59,80 @@ type Response struct {
 type Data struct {
 	Total int    `json:"total"`
 	Diff  []Diff `json:"diff"`
+}
+
+type FundFlowResponse struct {
+	Rc     int       `json:"rc"`     // 响应代码
+	Rt     int       `json:"rt"`     // 响应时间
+	Svr    int64     `json:"svr"`    // 服务器编号
+	Lt     int       `json:"lt"`     // 响应状态
+	Full   int       `json:"full"`   // 是否为完整数据
+	Dlmkts string    `json:"dlmkts"` // 数据市场信息
+	Data   *FlowData `json:"data"`   // 数据内容
+}
+
+// FlowData represents the nested data field in the JSON
+type FlowData struct {
+	Code   string   `json:"code"`   // 数据代码
+	Klines []string `json:"klines"` // 行情数据，包含日期和多个浮点值
+}
+
+// ParseKlines parses the klines data into a slice of Kline structs
+func ParseKlines(secCode string, klines []string) ([]*model.SecFundFlow, error) {
+	var result []*model.SecFundFlow
+	for _, line := range klines {
+		fields := strings.Split(line, ",")
+		if len(fields) != 15 {
+			return nil, fmt.Errorf("unexpected number of fields in kline data: %v", line)
+		}
+
+		// Parse date string to uint64 in YYYYMMDD format
+		dateStr := fields[0]
+		parsedDate, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid date format: %v", err)
+		}
+		dateInt64, _ := strconv.ParseInt(parsedDate.Format("20060102"), 10, 64)
+
+		// Convert other fields to appropriate types
+		kline := model.SecFundFlow{SecCode: secCode, MarketDate: int32(dateInt64)}
+		for i, f := range fields[1:] {
+			val, err := strconv.ParseFloat(f, 64)
+			if err != nil {
+				return nil, err
+			}
+			switch i {
+			case 0:
+				kline.MainBuyerNetIn = val
+			case 1:
+				kline.L4NetInt = val
+			case 2:
+				kline.L3NetIn = val
+			case 3:
+				kline.L2NetIn = val
+			case 4:
+				kline.L1NetIn = val
+			case 5:
+				kline.MainBuyerRatio = val
+			case 6:
+				kline.L4NetRatio = val
+			case 7:
+				kline.L3NetInRatio = float32(val)
+			case 8:
+				kline.L2NetInRatio = float32(val)
+			case 9:
+				kline.L1NetInRatio = float32(val)
+				// case 10:
+				// 	kline.Price = val
+				// case 11:
+				// 	kline.Percentage = val
+				// case 12:
+				// 	kline.Additional1 = val
+				// case 13:
+				// 	kline.Additional2 = val
+			}
+		}
+		result = append(result, &kline)
+	}
+	return result, nil
 }

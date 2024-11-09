@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/rayjiu/quantt/data/internal/crawler"
 	"github.com/rayjiu/quantt/data/internal/db"
 	"github.com/rayjiu/quantt/data/internal/db/repository"
@@ -20,7 +18,6 @@ func main() {
 	initDBService()
 	crawler.Start()
 
-	log.Info("crawler main start complete!")
 	for {
 	}
 }
@@ -38,4 +35,5 @@ func initDBService() {
 	var db = db.GetDB()
 	service.SecotorService = *service.NewSectorService(repository.NewSectorRepository(db))
 	service.SecQuoteService = *service.NewSecQuoteService(repository.NewSecQuoteRepository(db))
+	service.SecFundFlowService = *service.NewSecFundFlowService(repository.NewSecFundFlowRepository(db))
 }

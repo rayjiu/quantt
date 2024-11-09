@@ -20,6 +20,7 @@ var (
 	concept_url  = `http://5.push2.eastmoney.com/api/qt/clist/get?cb=jQuery112405271695738408106_1730305793916&pn=%v&pz=20&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&dect=1&wbp2u=|0|0|0|web&fid=f3&fs=m:90+t:3+f:!50&fields=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f26,f22,f33,f11,f62,f128,f136,f115,f152,f124,f107,f104,f105,f140,f141,f207,f208,f209,f222&_=1730305793917`
 )
 
+// crawler 板块基本信息和最新行情爬取
 type crawler struct {
 	// cfg *config.Config
 	urlChain           chan urlInfo
@@ -34,7 +35,7 @@ type urlInfo struct {
 	action  int // 0 表示忽略，1表示停止
 }
 
-var eastmoney *crawler = &crawler{
+var sectorBaseInfoCrawler *crawler = &crawler{
 	urlChain:           make(chan urlInfo),
 	stopDataWriteChan:  make(chan int),
 	sectorBaseInfoChan: make(chan *model.Sector),
