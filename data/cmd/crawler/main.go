@@ -37,4 +37,5 @@ func initDBService() {
 	db.InitDB(dsn)
 	var db = db.GetDB()
 	service.SecotorService = *service.NewSectorService(repository.NewSectorRepository(db))
+	service.SecQuoteService = *service.NewSecQuoteService(repository.NewSecQuoteRepository(db))
 }

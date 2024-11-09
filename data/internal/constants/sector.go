@@ -5,3 +5,7 @@ const (
 	SectorArea                // 地域
 	SectorIndustry            // 行业
 )
+
+const (
+	SecMarketType = 19
+)

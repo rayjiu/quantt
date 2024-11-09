@@ -47,9 +47,9 @@ func (s *sectorService) RefreshCache() error {
 }
 
 // batchUpsert 批量插入数据，并且根据缓存进行去重操作
-func (s *sectorService) BatchUpsert(sectors []model.Sector) error {
+func (s *sectorService) BatchUpsert(sectors []*model.Sector) error {
 	// 使用局部缓存防止并发冲突
-	uniqueSectors := make([]model.Sector, 0)
+	uniqueSectors := make([]*model.Sector, 0)
 	seen := make(map[string]bool)
 
 	s.mu.RLock()
@@ -64,7 +64,7 @@ func (s *sectorService) BatchUpsert(sectors []model.Sector) error {
 			existingSector := s.cache[cacheKey]
 			if existingSector.SecName != sector.SecName {
 				existingSector.SecName = sector.SecName // 执行更新逻辑
-				uniqueSectors = append(uniqueSectors, *existingSector)
+				uniqueSectors = append(uniqueSectors, existingSector)
 			}
 		} else {
 			// 如果缓存中没有，则视为新数据

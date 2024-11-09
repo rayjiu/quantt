@@ -22,9 +22,10 @@ var (
 
 type crawler struct {
 	// cfg *config.Config
-	urlChain          chan urlInfo
-	stopDataWriteChan chan int
-	sectorDataChan    chan model.Sector
+	urlChain           chan urlInfo
+	stopDataWriteChan  chan int
+	sectorBaseInfoChan chan *model.Sector
+	sectorQuoteChan    chan *model.SecQuote
 }
 
 type urlInfo struct {
@@ -34,9 +35,10 @@ type urlInfo struct {
 }
 
 var eastmoney *crawler = &crawler{
-	urlChain:          make(chan urlInfo),
-	stopDataWriteChan: make(chan int),
-	sectorDataChan:    make(chan model.Sector),
+	urlChain:           make(chan urlInfo),
+	stopDataWriteChan:  make(chan int),
+	sectorBaseInfoChan: make(chan *model.Sector),
+	sectorQuoteChan:    make(chan *model.SecQuote),
 }
 
 // startCrawSectorInfo 开始爬取板块列表和基本信息
@@ -126,11 +128,20 @@ func (c *crawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Browser,
 					} else {
 						var dataDiffs = resp.Data.Diff
 						for _, diff := range dataDiffs {
-							c.sectorDataChan <- model.Sector{
+							c.sectorBaseInfoChan <- &model.Sector{
 								SecCode:    diff.F12,
 								SecName:    diff.F14,
 								SecType:    int16(sectionType),
 								UpdateTime: time.Now(),
+							}
+
+							c.sectorQuoteChan <- &model.SecQuote{
+								SecCode:     diff.F12,
+								LastPrice:   diff.F2,
+								ChgRatio:    diff.F4,
+								ExchgRatio:  diff.F8, // 给出的数据是原始数据*100的
+								TotalMktCap: float64(diff.F20),
+								MarketType:  constants.SecMarketType,
 							}
 						}
 					}
@@ -147,7 +158,8 @@ func (c *crawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Browser,
 }
 
 func (c *crawler) startReceiveSectorData() {
-	var targetSectors []model.Sector
+	var targetSectors []*model.Sector
+	var targetSecQuotes []*model.SecQuote
 	go func() {
 		for {
 			select {
@@ -156,14 +168,25 @@ func (c *crawler) startReceiveSectorData() {
 				if len(targetSectors) > 0 {
 					service.SecotorService.BatchUpsert(targetSectors)
 				}
+				if len(targetSecQuotes) > 0 {
+					service.SecQuoteService.BatchUpsert(targetSecQuotes)
+				}
 				return
 
-			case data := <-c.sectorDataChan:
+			case data := <-c.sectorBaseInfoChan:
 				targetSectors = append(targetSectors, data)
 				if len(targetSectors) >= 100 {
 					service.SecotorService.BatchUpsert(targetSectors)
 					targetSectors = nil
 				}
+
+			case data := <-c.sectorQuoteChan:
+				targetSecQuotes = append(targetSecQuotes, data)
+				if len(targetSectors) >= 100 {
+					service.SecQuoteService.BatchUpsert(targetSecQuotes)
+					targetSecQuotes = nil
+				}
+
 			}
 
 		}

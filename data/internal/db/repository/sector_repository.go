@@ -66,7 +66,7 @@ func (r *SectorRepository) GetAll() ([]model.Sector, error) {
 }
 
 // BatchUpsert 批量插入或更新数据
-func (r *SectorRepository) BatchUpsert(sectors []model.Sector) error {
+func (r *SectorRepository) BatchUpsert(sectors []*model.Sector) error {
 
 	// 根据主键进行冲突处理，假设在 sec_code 和 sec_type 冲突时更新数据
 	result := r.db.Clauses(
