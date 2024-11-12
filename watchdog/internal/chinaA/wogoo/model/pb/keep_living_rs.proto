@@ -1,0 +1,10 @@
+syntax = "proto3";
+package model;
+option go_package="./model";
+
+message KeepLivingRs {
+  uint32 marketType = 1;
+  uint32 marketDate = 2;
+  uint32 marketTime = 3;
+  uint32 marketStatus = 4;
+}

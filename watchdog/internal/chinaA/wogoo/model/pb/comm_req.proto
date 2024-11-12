@@ -1,0 +1,13 @@
+syntax = "proto3";
+package model;
+option go_package="./model";
+
+// 标准请求
+message CommonReq {
+  string userId = 1; // 用户 uid
+  string token = 2; // 用户 token
+  int32 termType = 3; // 终端操作系统类型
+  string deviceNo = 4; // 终端设备编号
+  string version = 5; //终端版本号 "4.1.0"
+}
+

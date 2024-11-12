@@ -1,0 +1,10 @@
+syntax = "proto3";
+package model;
+
+option go_package="./model";
+
+// 跟数字相关的对象封装
+message NumberWrapper {
+  int64 value = 1; // 转换成整数之后的数字
+  uint32 decimal = 2; // 3表示扩大 10^3 = 1000倍
+}

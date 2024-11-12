@@ -1,0 +1,72 @@
+syntax = "proto3";
+package model;
+option go_package = "./model";
+import "number_wrapper.proto";
+// 股票快照
+message StockSnapshot {
+  uint32 marketType = 1; // 市场代码
+  string stockId = 2; // 股票代码
+  uint32 tradeTime = 3; // 交易时间
+  uint32 totalMins = 4; // 总分钟数
+  NumberWrapper currDisplayPrice = 5; // 当前展示价格
+  NumberWrapper currCollectPrice = 6; // 当前集合价格
+  NumberWrapper yesterdayClosePrice = 7; // 昨收
+  NumberWrapper lowestPrice = 8; // 最低价
+  NumberWrapper lastPrice = 9; // 最新价
+  NumberWrapper openPrice = 10; // 开盘价
+  NumberWrapper closePrice = 11; // 收盘价
+  NumberWrapper highestPrice = 12; // 最高价
+  NumberWrapper tradeVal = 13; // 成交额
+  uint64 tradeAmount = 14; // 成交量
+  int32 tradeStatus = 15; // 交易状态
+  NumberWrapper totalVal = 16; // 总市值
+  int32 lineNo = 17; // 线号
+  NumberWrapper exchangeRatio = 18; // 换手率
+  uint32 tradeNum = 19; // 成交笔数
+  NumberWrapper yesterdayCloseIOPV = 20; // 昨收基金净值
+  NumberWrapper iopv = 21; // 基金净值
+  NumberWrapper dynPERate = 22; // 动态市盈率
+  NumberWrapper peRate = 23; // 静态市盈率
+  NumberWrapper peTTM = 24; // 滚动市盈率
+  NumberWrapper pbRate = 25; // 市净率
+  uint32 riseCount = 26; // 涨家数
+  uint32 fallCount = 27; // 跌家数
+  uint32 unchangeCount = 28; // 平家数
+  NumberWrapper avgPrice = 29; // 均价
+  uint32 inPlate = 30; // 内盘
+  uint32 outPlate = 31; // 外盘
+  NumberWrapper entrustRate = 32; // 委比
+  NumberWrapper amountRate = 33; // 量比
+  uint32 afterTradeDate = 34; // 盘后交易日期
+  uint32 afterTradeTime = 35; // 盘后交易时间
+  uint32 afterTradeAmount = 36; // 盘后成交量
+  NumberWrapper afterTradeVal = 37; // 盘后成交额
+  NumberWrapper yesterdaySettlePrice = 38; // 昨日结算价
+  uint32 yesterdayPosition = 39; // 昨日持仓量
+  NumberWrapper settlePrice = 40; // 结算价
+  uint32 position = 41; // 持仓量
+  NumberWrapper totalEntrustBuyAmount = 42; // 总委买比
+  NumberWrapper totalEntrustSaleAmount = 43; // 总委卖比
+  NumberWrapper weightAvgBuyPrice = 44; // 加权平均买价
+  NumberWrapper weightAvgSalePrice = 45; // 加权平均卖价
+  NumberWrapper afterTradePrice = 46; //盘后成交价
+  uint32 marketDate = 47;
+  NumberWrapper flowTotalVal = 48; // 流通总市值
+  NumberWrapper amplitude = 49; // 振幅
+  NumberWrapper changeRate = 50; // 涨跌幅
+  NumberWrapper premiumRate = 51; // 溢价率
+  NumberWrapper equitySwapPrice = 52; // 转股价
+  NumberWrapper equitySwapValue = 53; // 转股价值
+
+  NumberWrapper freeTotalVal = 54; // 实际流通市值
+  NumberWrapper realExchangeRatio = 55; // 真实换手率
+  NumberWrapper yearChgRatio = 56; // 今年涨幅
+  NumberWrapper day20ChgRatio = 57; // 近20日涨幅
+  NumberWrapper callAucTradeVal = 58; // 早盘集合竞价成交额
+  string hHisPx = 59; // 历史最高价字符串, "前复权,后复权,不复权"
+  string h52wsPx = 60; // 52周最高价字符串, "前复权,后复权,不复权"
+  string l52wsPx = 61; // 52周最低价字符串, "前复权,后复权,不复权"
+  NumberWrapper stockDividendRatio = 62; //股息率
+  uint32 availableUseDate = 63;// 可用日期
+  NumberWrapper expectedRevenue = 64; // 预期收益
+}

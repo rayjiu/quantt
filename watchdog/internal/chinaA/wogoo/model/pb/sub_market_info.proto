@@ -1,0 +1,9 @@
+syntax = "proto3";
+package model;
+
+option go_package="./model";
+// 订阅市场信息
+message SubMarketInfo {
+  uint32 marketType = 1; // 市场类型
+  repeated uint32 bizType = 2; // 业务类型
+}

@@ -136,3 +136,32 @@ func ParseKlines(secCode string, klines []string) ([]*model.SecFundFlow, error) 
 	}
 	return result, nil
 }
+
+type TradePeriod struct {
+	B int64 `json:"b"`
+	E int64 `json:"e"`
+}
+
+type TradePeriods struct {
+	Pre     interface{}   `json:"pre"`   // null in your example, so using `interface{}` to accommodate any type
+	After   interface{}   `json:"after"` // null in your example, so using `interface{}` to accommodate any type
+	Periods []TradePeriod `json:"periods"`
+}
+
+type FundflowData struct {
+	Code   string `json:"code"`
+	Market int    `json:"market"`
+	// Name         string       `json:"name"`
+	// TradePeriods TradePeriods `json:"tradePeriods"`
+	Klines []string `json:"klines"`
+}
+
+type FundflowResponse struct {
+	Rc     int    `json:"rc"`
+	Rt     int    `json:"rt"`
+	Svr    int    `json:"svr"`
+	Lt     int    `json:"lt"`
+	Full   int    `json:"full"`
+	Dlmkts string `json:"dlmkts"`
+	Data   Data   `json:"data"`
+}

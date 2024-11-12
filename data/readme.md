@@ -18,3 +18,8 @@ http://90.push2.eastmoney.com/api/qt/clist/get?cb=jQuery112405339790134151299_17
 
 #### 板块历史资金流向
 https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get?cb=jQuery112309704473719868352_1731164189783&lmt=0&klt=101&fields1=f1%2Cf2%2Cf3%2Cf7&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61%2Cf62%2Cf63%2Cf64%2Cf65&ut=b2884a393a59ad64002292a3e90d46a5&secid=90.BK1034&_=1731164189784
+
+
+#### 概念板块主力资金流向当日实时走向
+
+https://push2.eastmoney.com/api/qt/stock/fflow/kline/get?cb=jQuery112304941496874123017_1731341417850&lmt=0&klt=1&fields1=f1%2Cf2%2Cf3%2Cf7&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61%2Cf62%2Cf63%2Cf64%2Cf65&ut=b2884a393a59ad64002292a3e90d46a5&secid=90.BK0935&_=1731341417851

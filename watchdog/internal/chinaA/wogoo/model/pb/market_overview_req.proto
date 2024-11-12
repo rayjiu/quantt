@@ -1,0 +1,12 @@
+syntax = "proto3";
+package model;
+option go_package = "./model";
+import "common_req.proto";
+
+
+//  市场概要信息请求
+message MarketOverviewReq {
+  CommonReq commonReq = 1; // 标准请求
+  int32 marketType = 2; // 市场类型列表
+  uint32 version = 3; //版本号
+}

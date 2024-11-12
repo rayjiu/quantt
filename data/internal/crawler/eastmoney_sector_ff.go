@@ -18,7 +18,7 @@ var (
 )
 
 // funfFlowCrawler 历史资金流向爬取
-type funflowCrawler struct {
+type secFunflowCrawler struct {
 	// cfg *config.Config
 	urlChain          chan fundFlowUrlInfo
 	stopDataWriteChan chan int
@@ -31,14 +31,14 @@ type fundFlowUrlInfo struct {
 	action  int // 0 表示忽略，1表示停止
 }
 
-var ffCrawler *funflowCrawler = &funflowCrawler{
+var ffCrawler *secFunflowCrawler = &secFunflowCrawler{
 	urlChain:          make(chan fundFlowUrlInfo),
 	stopDataWriteChan: make(chan int),
 	fundFlowChan:      make(chan []*model.SecFundFlow),
 }
 
 // startFundFlowData 开始抓取板块历史资金流向
-func (c *funflowCrawler) startHistoryFundFlowData() {
+func (c *secFunflowCrawler) startHistoryFundFlowData() {
 	c.startReceiveData()
 	log.Infof("Start to start crawer.")
 
@@ -53,7 +53,7 @@ func (c *funflowCrawler) startHistoryFundFlowData() {
 	c.urlChain <- fundFlowUrlInfo{action: 1}
 }
 
-func (c *funflowCrawler) startBrowser() {
+func (c *secFunflowCrawler) startBrowser() {
 
 	go func() {
 		pw, err := playwright.Run()
@@ -95,7 +95,7 @@ func (c *funflowCrawler) startBrowser() {
 	}()
 }
 
-func (c *funflowCrawler) sendPgeRequest(wg *sync.WaitGroup, secCode string, browser playwright.Browser, url string) {
+func (c *secFunflowCrawler) sendPgeRequest(wg *sync.WaitGroup, secCode string, browser playwright.Browser, url string) {
 	wg.Add(1)
 	defer wg.Done()
 	page, err := browser.NewPage()
@@ -146,7 +146,7 @@ func (c *funflowCrawler) sendPgeRequest(wg *sync.WaitGroup, secCode string, brow
 	}
 }
 
-func (c *funflowCrawler) startReceiveData() {
+func (c *secFunflowCrawler) startReceiveData() {
 	var targetFundFlowDatas []*model.SecFundFlow
 	go func() {
 		for {

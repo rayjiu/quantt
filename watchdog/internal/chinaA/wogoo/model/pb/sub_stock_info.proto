@@ -1,0 +1,11 @@
+syntax = "proto3";
+package model;
+option go_package="./model";
+//import "SubBizInfo.proto";
+
+// 订阅股票信息
+message SubStockInfo {
+  uint32 marketType = 1; // 市场类型
+  string stockId = 2; // 股票代码
+  repeated uint32 bizType = 3;// 订阅业务
+}
