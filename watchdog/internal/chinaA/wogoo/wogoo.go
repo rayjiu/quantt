@@ -2,7 +2,6 @@ package wogoo
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
 	"net"
 	"strconv"
@@ -31,7 +30,7 @@ func (w *wogoo) SetupClient(host, userId, deviceNo, token string) {
 	log.Infof("Host:%v", host)
 	conn, err := net.Dial("tcp", host)
 
-	conn.SetDeadline(time.Now().Add(time.Minute * 5))
+	conn.SetDeadline(time.Time{})
 
 	if err != nil {
 		panic(err)
@@ -66,7 +65,7 @@ func (w *wogoo) receiver() {
 	timeSend := time.Now()
 	for {
 		resByte, err := w.readMsg()
-		// log.Infof("Receive data.%+v", resByte)
+		// log.Infof("Receive data.%+v, elapse:%v", resByte, time.Since(timeSend))
 		if err != nil {
 			break
 		}
@@ -75,7 +74,7 @@ func (w *wogoo) receiver() {
 			go w.decodeMsg(v)
 		}
 
-		if time.Since(timeSend) > 20*time.Second {
+		if time.Since(timeSend) >= 20*time.Second {
 			//c.sendUnSub()
 			//if time.Now().Second() %10 ==0 {
 			w.sendKeepLiving()
@@ -113,10 +112,9 @@ func (w *wogoo) decodeMsg(buff []byte) {
 	case 1002:
 		pb := &model.StockSnapshot{}
 		proto.Unmarshal(buff[14:length], pb)
-		s, _ := encoding.ToIndentJSON(&pb)
+		// s, _ := encoding.ToIndentJSON(&pb)
 		if len(buff) > 0 {
 			w.snapshotMap[pb.StockId+"."+strconv.Itoa(int(pb.MarketType))](pb)
-			fmt.Printf("received:%+v", s)
 		}
 	case 2011:
 		pb := &model.KeepLivingRs{}
@@ -141,7 +139,7 @@ func (w *wogoo) sendKeepLiving() {
 	d[5] = byte(len(d))
 	_, err := w.conn.Write(d)
 	if err != nil {
-		// logger.GetDefaultLogger().Infof("发送错误%v", err)
+		log.Infof("发送错误%v", err)
 	}
 }
 
@@ -173,7 +171,7 @@ func (w *wogoo) sendSub(stocks []*model.SubStockInfo) error {
 	d[5] = Len[3]
 	_, err := w.conn.Write(d)
 	if err != nil {
-		// logger.GetDefaultLogger().Infof("发送错误%v", err)
+		log.Infof("发送错误%v", err)
 		return err
 	}
 	return nil

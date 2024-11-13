@@ -12,9 +12,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func init() {
+	InitLogger()
+}
+
 func InitLogger() {
 	// 日志文件路径
-	logPath := "/var/log/app/crawler.log"
+	logPath := "/var/log/app/analysis.log"
 
 	// 配置rotatelogs
 	writer, err := rotatelogs.New(
@@ -32,6 +36,10 @@ func InitLogger() {
 	log.SetOutput(io.MultiWriter(os.Stdout, writer))
 	log.SetReportCaller(true)
 
+	// 设置日志格式
+	log.SetFormatter(&log.TextFormatter{
+		TimestampFormat: time.RFC3339,
+	})
 	log.SetFormatter(new(CustomFormatter))
 
 	// 设置日志级别
@@ -41,20 +49,6 @@ func InitLogger() {
 type CustomFormatter struct{}
 
 func (f *CustomFormatter) Format(entry *log.Entry) ([]byte, error) {
-	file := "unknown"
-	line := 0
-	if entry.HasCaller() {
-		file = entry.Caller.File
-		line = entry.Caller.Line
-	}
-
-	logMessage := fmt.Sprintf(
-		"%s  %s  %s:%d %s\n",
-		entry.Time.Format("2006-01-02 15:04:05"),
-		entry.Level,
-		file,
-		line,
-		entry.Message,
-	)
+	logMessage := fmt.Sprintf("[%s] %s: %s\n", entry.Level, entry.Time.Format("2006-01-02 15:04:05"), entry.Message)
 	return []byte(logMessage), nil
 }
