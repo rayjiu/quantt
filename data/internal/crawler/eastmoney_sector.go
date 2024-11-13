@@ -148,7 +148,7 @@ func (c *crawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Browser,
 					}
 
 				} else {
-					fmt.Println("No match found")
+					log.Error("No match found")
 				}
 
 			} else {

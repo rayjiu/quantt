@@ -36,4 +36,5 @@ func initDBService() {
 	service.SecotorService = *service.NewSectorService(repository.NewSectorRepository(db))
 	service.SecQuoteService = *service.NewSecQuoteService(repository.NewSecQuoteRepository(db))
 	service.SecFundFlowService = *service.NewSecFundFlowService(repository.NewSecFundFlowRepository(db))
+	service.KlineService = *service.NewklineDayService(repository.NewKlineDayRepository(db))
 }

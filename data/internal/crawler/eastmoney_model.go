@@ -165,3 +165,45 @@ type FundflowResponse struct {
 	Dlmkts string `json:"dlmkts"`
 	Data   Data   `json:"data"`
 }
+
+// Root represents the root structure of the JSON response
+type KlineResponse struct {
+	Rc     int        `json:"rc"`
+	Rt     int        `json:"rt"`
+	Svr    int        `json:"svr"`
+	Lt     int        `json:"lt"`
+	Full   int        `json:"full"`
+	Dlmkts string     `json:"dlmkts"`
+	Data   *KlineData `json:"data"`
+}
+
+// Data represents the "data" field in the JSON response
+type KlineData struct {
+	Code      string   `json:"code"`
+	Market    int      `json:"market"`
+	Name      string   `json:"name"`
+	Decimal   int      `json:"decimal"`
+	Dktotal   int      `json:"dktotal"`
+	PreKPrice float64  `json:"preKPrice"`
+	Klines    []string `json:"klines"`
+}
+
+func ParseKline(code string, market int, klineStr string) (*model.KlineDay, error) {
+	var kline model.KlineDay
+	var marketDateStr string
+	_, err := fmt.Sscanf(klineStr, "%s,%f,%f,%f,%f,%d,%f,%f,%f,%f,%f",
+		&marketDateStr, &kline.Open, &kline.Close, &kline.High, &kline.Low, &kline.Volume,
+		&kline.Amount, &kline.Amplitude, &kline.ChangePct, &kline.Change, &kline.Turnover)
+	parsedDate, err := time.Parse("2006-01-02", marketDateStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid date format: %v", err)
+	}
+	dateInt64, _ := strconv.ParseInt(parsedDate.Format("20060102"), 10, 64)
+	kline.StockCode = code
+	kline.MarketType = int16(market)
+	kline.MarketDate = int32(dateInt64)
+	if err != nil {
+		return nil, err
+	}
+	return &kline, nil
+}
