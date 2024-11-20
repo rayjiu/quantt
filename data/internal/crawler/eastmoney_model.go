@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -188,22 +189,75 @@ type KlineData struct {
 	Klines    []string `json:"klines"`
 }
 
-func ParseKline(code string, market int, klineStr string) (*model.KlineDay, error) {
-	var kline model.KlineDay
-	var marketDateStr string
-	_, err := fmt.Sscanf(klineStr, "%s,%f,%f,%f,%f,%d,%f,%f,%f,%f,%f",
-		&marketDateStr, &kline.Open, &kline.Close, &kline.High, &kline.Low, &kline.Volume,
-		&kline.Amount, &kline.Amplitude, &kline.ChangePct, &kline.Change, &kline.Turnover)
-	parsedDate, err := time.Parse("2006-01-02", marketDateStr)
+func ParseKline(stockCode string, marketType uint32, klineStr string) (*model.KlineDay, error) {
+	fields := strings.Split(klineStr, ",")
+	if len(fields) != 11 {
+		return nil, errors.New("invalid kline data format")
+	}
+
+	// Parse the date string into a time.Time type
+	date, err := time.Parse("2006-01-02", fields[0])
 	if err != nil {
 		return nil, fmt.Errorf("invalid date format: %v", err)
 	}
-	dateInt64, _ := strconv.ParseInt(parsedDate.Format("20060102"), 10, 64)
-	kline.StockCode = code
-	kline.MarketType = int16(market)
-	kline.MarketDate = int32(dateInt64)
+
+	dateInt64, _ := strconv.ParseInt(date.Format("20060102"), 10, 64)
+
+	// Parse remaining fields
+	open, err := strconv.ParseFloat(fields[1], 64)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid open value: %v", err)
 	}
-	return &kline, nil
+	closeVal, err := strconv.ParseFloat(fields[2], 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid close value: %v", err)
+	}
+	high, err := strconv.ParseFloat(fields[3], 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid high value: %v", err)
+	}
+	low, err := strconv.ParseFloat(fields[4], 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid low value: %v", err)
+	}
+	volume, err := strconv.ParseInt(fields[5], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid volume value: %v", err)
+	}
+	amount, err := strconv.ParseFloat(fields[6], 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid amount value: %v", err)
+	}
+	amplitude, err := strconv.ParseFloat(fields[7], 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid amplitude value: %v", err)
+	}
+	changePct, err := strconv.ParseFloat(fields[8], 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid changePct value: %v", err)
+	}
+	change, err := strconv.ParseFloat(fields[9], 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid change value: %v", err)
+	}
+	turnover, err := strconv.ParseFloat(fields[10], 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid turnover value: %v", err)
+	}
+
+	return &model.KlineDay{
+		StockCode:  stockCode,
+		MarketType: int16(marketType),
+		MarketDate: int32(dateInt64),
+		Open:       open,
+		Close:      closeVal,
+		High:       high,
+		Low:        low,
+		Volume:     volume,
+		Amount:     amount,
+		Amplitude:  amplitude,
+		ChangePct:  changePct,
+		Change:     change,
+		Turnover:   turnover,
+	}, nil
 }

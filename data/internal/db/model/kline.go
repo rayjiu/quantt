@@ -17,7 +17,7 @@ type KlineDay struct {
 	Amount     float64   `gorm:"column:amount;type:float8"`
 	Amplitude  float64   `gorm:"column:amplitude"`
 	Change     float64   `gorm:"column:change"`
-	ChangePct  float64   `gorm:"column:changePct"`
+	ChangePct  float64   `gorm:"column:changepct"`
 	Turnover   float64   `gorm:"column:turnover"`
 	UpdateTime time.Time `gorm:"column:update_time;type:timestamptz;default:now()"`
 }

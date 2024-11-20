@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"sync"
 
@@ -30,13 +31,21 @@ var kCrawler *klineCrawler = &klineCrawler{
 	klineChan:         make(chan *model.KlineDay),
 }
 
-var rawUrl = `https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery35106153870917858113_1731491914077&secid=%v.%v&ut=fa5fd1943c7b386f172d6893dbfba10b&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=1&end=20500101&lmt=120&_=1731491914105`
+var rawUrl = `https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery35106153870917858113_1731491914077&secid=%v.%v&ut=fa5fd1943c7b386f172d6893dbfba10b&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61&klt=101&fqt=1&end=20500101&lmt=10000&_=1731491914105`
 
 func (k *klineCrawler) startCrawlKlineData(stockCode string, marketType uint32) {
 	k.startReceiveData()
 	log.Infof("Start to start crawer.")
 
 	k.startBrowser()
+
+	var finalUrl = fmt.Sprintf(rawUrl, marketType, stockCode)
+
+	k.urlChain <- klineUrlInfo{
+		url: finalUrl,
+	}
+
+	k.urlChain <- klineUrlInfo{action: 1}
 }
 
 func (k *klineCrawler) startReceiveData() {
@@ -84,6 +93,7 @@ func (k *klineCrawler) startBrowser() {
 
 			if urlInfo.action == 1 {
 				if receivedUrl {
+					log.Info("Received stop action. waiting.")
 					wg.Wait()
 				}
 
@@ -99,6 +109,7 @@ func (k *klineCrawler) startBrowser() {
 }
 
 func (k *klineCrawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Browser, url string) {
+	log.Infof("start crawl ur:%v", url)
 	wg.Add(1)
 	defer wg.Done()
 
@@ -131,12 +142,13 @@ func (k *klineCrawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Bro
 
 				if resp.Data != nil {
 					for _, kline := range resp.Data.Klines {
-						var parsedKlines, err = ParseKline(resp.Data.Code, resp.Data.Market, kline)
+						log.Infof("kline:%+v", kline)
+						var parsedKline, err = ParseKline(resp.Data.Code, uint32(resp.Data.Market), kline)
 						if err != nil {
 							panic(err)
 						}
-
-						k.klineChan <- parsedKlines
+						log.Infof("kline:%+v", parsedKline)
+						k.klineChan <- parsedKline
 					}
 
 				}

@@ -60,7 +60,7 @@ func (r *KlineDayRepository) BatchUpsert(klines []*model.KlineDay) error {
 
 	err := r.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{
-			{Name: "sec_code"},
+			{Name: "stock_code"},
 			{Name: "market_type"},
 			{Name: "market_date"},
 		}, // 定义冲突字段
@@ -73,7 +73,7 @@ func (r *KlineDayRepository) BatchUpsert(klines []*model.KlineDay) error {
 			"amount",
 			"amplitude",
 			"change",
-			"changePct",
+			"changepct",
 			"turnover",
 			"update_time",
 		}), // 冲突时更新的字段

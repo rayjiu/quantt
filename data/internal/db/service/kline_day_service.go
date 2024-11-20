@@ -31,7 +31,7 @@ func (s *klineDayService) CreateKline(kline *model.KlineDay) error {
 }
 
 // GetKline retrieves a KlineDay record by its primary key fields
-func (s *klineDayService) GetKline(secCode string, marketType int16, marketDate int32) (*models.KlineDay, error) {
+func (s *klineDayService) GetKline(secCode string, marketType int16, marketDate int32) (*model.KlineDay, error) {
 	return s.repo.GetByPrimaryKey(secCode, marketType, marketDate)
 }
 
