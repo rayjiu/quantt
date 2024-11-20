@@ -16,6 +16,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
+      - MongoURI=${MongoURI}
     volumes:
-      - .:/workdir # 将本地代码挂载到容器中，如果是production，则这个不需要
+      - .:/analysis # 将本地代码挂载到容器中，如果是production，则这个不需要
       - /var/log/app_docker:/var/log/app
