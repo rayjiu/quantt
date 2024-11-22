@@ -32,5 +32,6 @@ func initDBService() {
 
 	var db = mongoDB.GetQuotaDB()
 	service.TrenddService = service.NewTrendService(repository.NewTrendRepository(db, "kline_trend"))
+	service.SnapshotService = service.NewSnapshotService(repository.NewSnapshotRepository(db, "stock_snapshot"))
 
 }
