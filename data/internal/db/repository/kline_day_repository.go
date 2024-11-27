@@ -22,10 +22,21 @@ func (r *KlineDayRepository) Create(kline *model.KlineDay) error {
 	return r.db.Create(kline).Error
 }
 
+func (r *KlineDayRepository) GetByStockCode(secCode string, marketType int16) ([]model.KlineDay, error) {
+	var klines []model.KlineDay
+	if err := r.db.Where("stock_code = ? AND market_type = ?", secCode, marketType).Order("market_date asc").Find(&klines).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return klines, nil
+}
+
 // GetByPrimaryKey retrieves a KlineDay record based on the unique constraints (sec_code, market_type, market_date)
 func (r *KlineDayRepository) GetByPrimaryKey(secCode string, marketType int16, marketDate int32) (*model.KlineDay, error) {
 	var kline model.KlineDay
-	if err := r.db.Where("sec_code = ? AND market_type = ? AND market_date = ?", secCode, marketType, marketDate).First(&kline).Error; err != nil {
+	if err := r.db.Where("stock_code = ? AND market_type = ? AND market_date = ?", secCode, marketType, marketDate).First(&kline).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -41,7 +52,7 @@ func (r *KlineDayRepository) Update(kline *model.KlineDay) error {
 
 // Delete removes a KlineDay record based on the unique constraints
 func (r *KlineDayRepository) Delete(secCode string, marketType int16, marketDate int32) error {
-	return r.db.Where("sec_code = ? AND market_type = ? AND market_date = ?", secCode, marketType, marketDate).Delete(&model.KlineDay{}).Error
+	return r.db.Where("stock_code = ? AND market_type = ? AND market_date = ?", secCode, marketType, marketDate).Delete(&model.KlineDay{}).Error
 }
 
 // ListAll retrieves all KlineDay records from the database

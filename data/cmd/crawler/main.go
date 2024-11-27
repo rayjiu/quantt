@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rayjiu/quantt/data/internal/crawler"
+	"github.com/rayjiu/quantt/data/internal/calculator"
 	"github.com/rayjiu/quantt/data/internal/db"
 	"github.com/rayjiu/quantt/data/internal/db/repository"
 	"github.com/rayjiu/quantt/data/internal/db/service"
@@ -16,7 +16,8 @@ func main() {
 	// cfg := config.LoadConfig()
 
 	initDBService()
-	crawler.Start()
+	// crawler.Start()
+	calculator.StartCalHistoryVolumeRate()
 
 	for {
 	}
@@ -37,4 +38,6 @@ func initDBService() {
 	service.SecQuoteService = *service.NewSecQuoteService(repository.NewSecQuoteRepository(db))
 	service.SecFundFlowService = *service.NewSecFundFlowService(repository.NewSecFundFlowRepository(db))
 	service.KlineService = *service.NewklineDayService(repository.NewKlineDayRepository(db))
+	service.SectorConsService = *service.NewSectorConsService(repository.NewSectorConsitutuentRepository(db))
+	service.KlineExtraService = *service.NewKlineExtraService(repository.NewKlineExtraRepository(db), &service.KlineService)
 }

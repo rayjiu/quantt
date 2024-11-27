@@ -54,3 +54,7 @@ func (s *klineDayService) ListAllKlines() ([]model.KlineDay, error) {
 func (s *klineDayService) BatchUpsert(klines []*model.KlineDay) error {
 	return s.repo.BatchUpsert(klines)
 }
+
+func (s *klineDayService) GetKlineByCode(stockCode string, marketType int16) ([]model.KlineDay, error) {
+	return s.repo.GetByStockCode(stockCode, marketType)
+}

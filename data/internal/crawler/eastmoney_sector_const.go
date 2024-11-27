@@ -12,43 +12,27 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type klineCrawler struct {
-	urlChain          chan klineUrlInfo
+type secConstituentCrawler struct {
+	urlChain          chan secConsUrlInfo
 	stopDataWriteChan chan int
-	klineChan         chan *model.KlineDay
+	consChan          chan *model.SectorConstituent
 }
 
-type klineUrlInfo struct {
-	url        string
-	stockCode  string
-	marketType int
-	action     int // 0 表示忽略 1表示停止
+type secConsUrlInfo struct {
+	url     string
+	secCode string
+	action  int // 0 表示忽略 1表示停止
 }
 
-var kCrawler *klineCrawler = &klineCrawler{
-	urlChain:          make(chan klineUrlInfo),
+var secCCrrawler secConstituentCrawler = secConstituentCrawler{
+	urlChain:          make(chan secConsUrlInfo),
 	stopDataWriteChan: make(chan int),
-	klineChan:         make(chan *model.KlineDay),
+	consChan:          make(chan *model.SectorConstituent),
 }
 
-var rawUrl = `https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery35106153870917858113_1731491914077&secid=%v.%v&ut=fa5fd1943c7b386f172d6893dbfba10b&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61&klt=101&fqt=1&beg=%v&end=20500101&lmt=10000&_=1731491914105`
+var consRawUlr = `https://push2.eastmoney.com/api/qt/clist/get?cb=jQuery1123028842927578359423_1732548402765&fid=f174&po=1&pz=200&pn=1&np=1&fltt=2&invt=2&ut=b2884a393a59ad64002292a3e90d46a5&fs=b:%v&fields=f12,f14,f13`
 
-func (k *klineCrawler) startCrawlKlineData(stockCode string, marketType uint32) {
-	k.startReceiveData()
-	log.Infof("Start to start crawer.")
-
-	k.startBrowser()
-
-	var finalUrl = fmt.Sprintf(rawUrl, marketType, stockCode, 0)
-
-	k.urlChain <- klineUrlInfo{
-		url: finalUrl,
-	}
-
-	k.urlChain <- klineUrlInfo{action: 1}
-}
-
-func (k *klineCrawler) startCrawKlineDataByBeiginData(beigin uint32) {
+func (k *secConstituentCrawler) startCrawAllConsData() {
 	k.startReceiveData()
 	log.Infof("Start to start crawer.")
 
@@ -57,45 +41,29 @@ func (k *klineCrawler) startCrawKlineDataByBeiginData(beigin uint32) {
 
 	var sectorMap = service.SecotorService.GetCachedSector()
 	for _, v := range sectorMap {
-		var finalUrl = fmt.Sprintf(rawUrl, 90, v.SecCode, beigin)
-		k.urlChain <- klineUrlInfo{url: finalUrl}
+		var finalUrl = fmt.Sprintf(consRawUlr, v.SecCode)
+		k.urlChain <- secConsUrlInfo{url: finalUrl, secCode: v.SecCode}
 	}
 
-	k.urlChain <- klineUrlInfo{action: 1}
+	k.urlChain <- secConsUrlInfo{action: 1}
 }
 
-func (k *klineCrawler) startCrawAllSecKliineData() {
-	k.startReceiveData()
-	log.Infof("Start to start crawer.")
-
-	service.SecotorService.RefreshCache()
-	k.startBrowser()
-
-	var sectorMap = service.SecotorService.GetCachedSector()
-	for _, v := range sectorMap {
-		var finalUrl = fmt.Sprintf(rawUrl, 90, v.SecCode, 0)
-		k.urlChain <- klineUrlInfo{url: finalUrl}
-	}
-
-	k.urlChain <- klineUrlInfo{action: 1}
-}
-
-func (k *klineCrawler) startReceiveData() {
-	var targetDatas []*model.KlineDay
+func (k *secConstituentCrawler) startReceiveData() {
+	var targetDatas []*model.SectorConstituent
 	go func() {
 		for {
 			select {
 			case <-k.stopDataWriteChan:
 				log.Infof("接受数据等待写入的channel关闭, targetSecotrs.Len:%v", len(targetDatas))
 				if len(targetDatas) > 0 {
-					service.KlineService.BatchUpsert(targetDatas)
+					service.SectorConsService.BatchUpsert(targetDatas)
 				}
 				return
 
-			case data := <-k.klineChan:
+			case data := <-k.consChan:
 				targetDatas = append(targetDatas, data)
 				if len(targetDatas) >= 500 {
-					service.KlineService.BatchUpsert(targetDatas)
+					service.SectorConsService.BatchUpsert(targetDatas)
 					targetDatas = nil
 				}
 			}
@@ -103,7 +71,7 @@ func (k *klineCrawler) startReceiveData() {
 	}()
 }
 
-func (k *klineCrawler) startBrowser() {
+func (k *secConstituentCrawler) startBrowser() {
 	go func() {
 		pw, err := playwright.Run()
 		if err != nil {
@@ -134,13 +102,13 @@ func (k *klineCrawler) startBrowser() {
 				break // Exit the loop and end the goroutine
 			} else {
 				receivedUrl = true
-				go k.sendPgeRequest(&wg, browser, urlInfo.url)
+				go k.sendPgeRequest(&wg, browser, urlInfo.url, urlInfo.secCode)
 			}
 		}
 	}()
 }
 
-func (k *klineCrawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Browser, url string) {
+func (k *secConstituentCrawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Browser, url, secCode string) {
 	wg.Add(1)
 	defer wg.Done()
 
@@ -164,7 +132,7 @@ func (k *klineCrawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Bro
 				// matches[1] 是括号内的内容
 				var content = matches[1]
 
-				var resp KlineResponse
+				var resp Response
 				err := json.Unmarshal([]byte(content), &resp)
 				if err != nil {
 					log.Error("Error unmarshaling JSON:", content)
@@ -172,12 +140,12 @@ func (k *klineCrawler) sendPgeRequest(wg *sync.WaitGroup, browser playwright.Bro
 				}
 
 				if resp.Data != nil {
-					for _, kline := range resp.Data.Klines {
-						var parsedKline, err = ParseKline(resp.Data.Code, uint32(resp.Data.Market), kline)
-						if err != nil {
-							panic(err)
+					for _, cons := range resp.Data.Diff {
+						k.consChan <- &model.SectorConstituent{
+							SecCode:    secCode,
+							StockCode:  cons.F12,
+							MarketType: int16(cons.F13),
 						}
-						k.klineChan <- parsedKline
 					}
 
 				}
